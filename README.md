@@ -17,8 +17,8 @@ Simply run `bash setup.bash` and you're set.
 Create a virtual environment with `python3` and activate it:
 
 ```text
-    virtualenv -p python3 .venv
-    source .venv/bin/activate
+virtualenv -p python3 .venv
+source .venv/bin/activate
 ```
 
 Now, install all python packages with `pip install -r requirements.txt` - or just [`doit`](https://pydoit.org) as its the only dependency at the moment: `pip install doit`.
@@ -65,10 +65,10 @@ We never intended to release this, so think of this project as a boilerplate to 
 ## Roadmap
 Currently, the initial database was created *before* the decision to release this was made - so this is somewhat incomplete. Address organization already works the way it should ..  but these features are planned:
 
-- [] Additional comments
+- [ ] Additional comments
 - [x] Data extraction for `pcbis.de`
 - [x] Tutorial on downloading invoices from `pcbis.de`
-- [] Diffing CSV files from employees, adding changes automagically
-- [] More modular setup (rules about converting phone numbers, cities, wrong categories ..)
+- [ ] Diffing CSV files from employees, adding changes automagically
+- [ ] More modular setup (rules about converting phone numbers, cities, wrong categories ..)
 
 :copyright: Fundevogel Kinder- und Jugendbuchhandlung
