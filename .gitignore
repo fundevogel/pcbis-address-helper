@@ -1,0 +1,16 @@
+# Cache files
+__pycache__/
+.doit.db
+
+# Development files
+.vscode
+.env
+
+# Sensitive information
+backups
+main.json
+
+src/*
+dist/*
+!src/index.html
+!dist/index.html

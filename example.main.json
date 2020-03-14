@@ -1,0 +1,16 @@
+[
+    {
+        "Kategorie": "Customer",
+        "Institution": "Local School",
+        "Beschreibung": "District 5, Big Building",
+        "Ansprechpartner": "John Doe",
+        "Straße": "Sesamestreet 5",
+        "PLZ": "01234",
+        "Ort": "Sometown",
+        "Telefon": "012345",
+        "Telefax": "567890",
+        "eMail": "hello@example.com",
+        "Internet": "https://example.com",
+        "Notiz": "Awesome customers are awesome"
+    }
+]
