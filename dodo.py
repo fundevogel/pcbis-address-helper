@@ -110,27 +110,34 @@ def unique(data):
 # TASKS (START)
 #
 
-
-
-
-def task_prepare():
+def task_backup():
     """
-    Prepares addresses from customer data & invoices
+    Backs up main file
     """
     return {
-        'file_dep': [
-            customers_file,
-            invoices_file,
+        'actions': [
+            'mkdir -p backups',
+            'cp ' + main_file + ' %(targets)s 2>/dev/null || :',
         ],
-        'actions': ['bash src/main.bash'],
-        'targets': [base_file],
-        'uptodate': [run_once],
+        'targets': [backup_file],
+    }
+
+
+def task_restore():
+    """
+    Restores main file
+    """
+    recent_backup = max(backup_files, key=path.getctime)
+
+    return {
+        'file_dep': [recent_backup],
+        'actions': ['cp %(dependencies)s ' + main_file],
     }
 
 
 def task_extract():
     """
-    Extracts addresses & formats them
+    Extracts addresses from source files
     """
     def extract_data():
         with open(base_file, 'r') as file:
@@ -147,35 +154,17 @@ def task_extract():
             json.dump(unique(data), file, ensure_ascii=False, indent=4)
 
     return {
-        'task_dep': ['prepare'],
-        'file_dep': [base_file],
-        'actions': [extract_data],
-        # 'targets': [main_file],  # TODO: This should only run once
-    }
-
-
-def task_backup():
-    """
-    Backs up main file
-    """
-    return {
-        'actions': [
-            'mkdir -p backups',
-            'cp ' + main_file + ' %(targets)s',
+        'task_dep': ['backup'],
+        'file_dep': [
+            customers_file,
+            invoices_file,
         ],
-        'targets': [backup_file],
-    }
-
-
-def task_restore():
-    """
-    Restores main file
-    """
-    recent_backup = max(backup_files, key=path.getctime)
-
-    return {
-        'file_dep': [recent_backup],
-        'actions': ['cp %(dependencies)s ' + main_file],
+        'actions': [
+            'bash src/main.bash',
+            extract_data,
+        ],
+        'targets': [main_file],
+        'uptodate': [run_once],
     }
 
 
@@ -196,7 +185,6 @@ def task_merge():
     return {
         'task_dep': ['backup'],
         'actions': [merge_json],
-        'targets': [main_file],
     }
 
 

@@ -1,7 +1,7 @@
 # KNV Address Organizer
 
 ## What
-This project serves as an example workflow for organizing addresses generated from [KNV](https://www.knv-zeitfracht.de) (german wholesale book distributor) and saving them in [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). It's possible to convert exported contacts from within [`pcbis.de -> fitbis`](https://pcbis.de) (called *Stammadressen*) as well as extracting them from invoices.
+This project serves as an example workflow for organizing addresses generated from [KNV](https://www.knv-zeitfracht.de) (german wholesale book distributor) and saving them in [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). It works with customer information that has been exported with [`pcbis.de`](https://pcbis.de) (called *Stammadressen*) and invoices issued by `Fitbis` as well.
 
 
 ## Why
@@ -10,7 +10,7 @@ We needed a solution that's flexible enough for all employees to work with (who 
 
 ## Getting started
 
-### TL;DR
+### Quick setup
 Simply run `bash setup.bash` and you're set.
 
 ### Manual setup
@@ -30,22 +30,23 @@ With `doit list` you'll be presented with available tasks:
 ```text
 $ doit list
 backup    Backs up main file
-extract   Extracts addresses & formats them
+extract   Extracts addresses from source files
 filter    Filters uniques out of main file
 merge     Merges lists into main file
-prepare   Prepares addresses from customer data & invoices
 print     Prints CSV tables from main file
 restore   Restores main file
 sort      Sorts main file
 split     Splits main file into lists
 ```
 
+After retrieving `Stammadressen.xls` (customer data) and `Fakturierung.hmtl` (invoices), put them in their respective directory inside `src` and run `doit extract` - after that, it's up to you (pull requests are welcome :fox:).
+
 
 ## Troubleshooting
 Especially when extracting outdated information, at some point or another challenges will arise:
 
 ### Scraping invoices
-First of all, exporting those invoices may take some time. When we decided to do this, there were over 8000 records, going back to 2010. `fitbis` isn't of much help there, limiting us to 50 records per page ..
+First of all, exporting those invoices may take some time. When we decided to do this, there were over 8000 records, going back to 2010. `Fitbis` isn't of much help there, limiting us to 50 records per page ..
 
 Along the way, we will need the help of our browser's 'Developer Tools' (which are included in [Firefox](https://developer.mozilla.org/en-US/docs/Tools) as well as [Chrome](https://developers.google.com/web/tools/chrome-devtools)).
 

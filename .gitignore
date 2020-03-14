@@ -7,11 +7,11 @@ __pycache__/
 .env
 
 # Sensitive information
-backups
-src/main.json
-
+src/*
 src/*/*
 !src/*/*.py
 !src/*/*.bash
 
 dist
+
+backups
