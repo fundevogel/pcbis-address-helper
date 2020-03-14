@@ -6,6 +6,7 @@
 #
 
 from doit import get_var
+from doit.tools import run_once
 
 # TODO: Import only what is needed
 import os  # path > isfile, getctime, split
@@ -17,6 +18,8 @@ from os import path
 from datetime import datetime  # now
 from hashlib import md5
 from operator import itemgetter
+
+from helpers import process
 
 #
 # IMPORTS (END)
@@ -47,13 +50,24 @@ timestamp = str(now.timestamp()).replace('.', '')
 
 # Directories
 backup_dir = 'backups/'
+src = 'src/'
+customers_dir = src + 'customers/'
+invoices_dir = src + 'invoices/'
+
 dist = 'dist/'
 list_dir = dist + 'json/'
 tables_dir = dist + 'csv/'
 
 # Files
+base_file = src + 'data.json'
 main_file = dist + 'main.json'
 backup_file = backup_dir + timestamp + '.json'
+
+customers_file = customers_dir + 'Stammadressen.xls'
+customers_temp = customers_dir + 'raw.xls'
+customers_json = customers_dir + 'raw.json'
+
+invoices_file = invoices_dir + 'Fakturierung.html'
 
 backups = backup_dir + '*.json'
 lists = list_dir + '*.json'
@@ -95,6 +109,50 @@ def unique(data):
 ###
 # TASKS (START)
 #
+
+
+
+
+def task_prepare():
+    """
+    Prepares addresses from customer data & invoices
+    """
+    return {
+        'file_dep': [
+            customers_file,
+            invoices_file,
+        ],
+        'actions': ['bash src/main.bash'],
+        'targets': [base_file],
+        'uptodate': [run_once],
+    }
+
+
+def task_extract():
+    """
+    Extracts addresses & formats them
+    """
+    def extract_data():
+        with open(base_file, 'r') as file:
+            raw = json.load(file)
+
+        # Process
+        data = []
+
+        for item in raw:
+            node = process(item)
+            data.append(node)
+
+        with open(main_file, 'w') as file:
+            json.dump(unique(data), file, ensure_ascii=False, indent=4)
+
+    return {
+        'task_dep': ['prepare'],
+        'file_dep': [base_file],
+        'actions': [extract_data],
+        # 'targets': [main_file],  # TODO: This should only run once
+    }
+
 
 def task_backup():
     """

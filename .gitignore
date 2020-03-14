@@ -8,9 +8,10 @@ __pycache__/
 
 # Sensitive information
 backups
-main.json
+src/main.json
 
-src/*
-dist/*
-!src/index.html
-!dist/index.html
+src/*/*
+!src/*/*.py
+!src/*/*.bash
+
+dist

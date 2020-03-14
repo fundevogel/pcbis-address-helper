@@ -1,11 +1,11 @@
 # KNV Address Organizer
 
 ## What
-This project serves as an example workflow for organizing addresses generated from [KNV](https://www.knv-zeitfracht.de) (german wholesale book distributor) and saving them in [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). It's possible to convert exported contacts from within [`pcbis.de`](https://pcbis.de) (called *Stammadressen*) as well as extracting them from invoices.
+This project serves as an example workflow for organizing addresses generated from [KNV](https://www.knv-zeitfracht.de) (german wholesale book distributor) and saving them in [CSV files](https://en.wikipedia.org/wiki/Comma-separated_values). It's possible to convert exported contacts from within [`pcbis.de -> fitbis`](https://pcbis.de) (called *Stammadressen*) as well as extracting them from invoices.
 
 
 ## Why
-We needed a solution that's flexible enough for all employees to work with while being easily maintainable through the [CLI](https://en.wikipedia.org/wiki/Command-line_interface).
+We needed a solution that's flexible enough for all employees to work with (who are using [Kubuntu](https://kubuntu.org) which helps) while being easily maintainable through the [CLI](https://en.wikipedia.org/wiki/Command-line_interface).
 
 
 ## Getting started
@@ -30,8 +30,10 @@ With `doit list` you'll be presented with available tasks:
 ```text
 $ doit list
 backup    Backs up main file
+extract   Extracts addresses & formats them
 filter    Filters uniques out of main file
 merge     Merges lists into main file
+prepare   Prepares addresses from customer data & invoices
 print     Prints CSV tables from main file
 restore   Restores main file
 sort      Sorts main file
@@ -42,8 +44,9 @@ split     Splits main file into lists
 Currently, the initial database was created *before* the decision to release this was made - so this is somewhat incomplete. Address organization already works the way it should ..  but these features are planned:
 
 - [] Additional comments
-- [] Data extraction for `pcbis.de`
+- [x] Data extraction for `pcbis.de`
 - [] Tutorial on downloading invoices from `pcbis.de`
 - [] Diffing CSV files from employees, adding changes automagically
+- [] More modular setup (rules about converting phone numbers, cities, wrong categories ..)
 
 :copyright: Fundevogel Kinder- und Jugendbuchhandlung
