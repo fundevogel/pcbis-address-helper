@@ -110,6 +110,21 @@ def unique(data):
 # TASKS (START)
 #
 
+def task_count():
+    """
+    Counts entries in main file
+    """
+    def count():
+        with open(main_file, 'r') as file:
+            data = json.load(file)
+
+        print('Database holds %s entries.' % len(data))
+
+    return {
+        'actions': [count],
+    }
+
+
 def task_backup():
     """
     Backs up main file
@@ -285,7 +300,7 @@ def task_print():
                     array = []
 
                     for k2, v2 in v.items():
-                        array.append(': '.join([k2, v2]))
+                        array.append(': '.join([k2, str(v2)]))
 
                     item[k] = '; '.join(array)
 
