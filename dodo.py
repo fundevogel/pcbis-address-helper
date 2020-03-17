@@ -9,18 +9,13 @@ from doit import get_var
 from doit.tools import run_once
 
 # TODO: Import only what is needed
-import csv  # ??
 import glob  # glob
 import json  # dump, load
 
 from os import path  # > isfile, getctime
 from datetime import datetime  # now
-from hashlib import md5
-from operator import itemgetter
 
-from csv_diff import load_csv, compare
-
-from helpers import process
+from helpers import sort_data, remove_duplicates, compare_csv, apply_changes, print_row
 
 #
 # IMPORTS (END)
@@ -85,32 +80,6 @@ comparison_files = glob.glob(comparisons)
 
 
 ###
-# FUNCTIONS (START)
-#
-
-# TODO: Remove unqiue from JSON dumps or move to write_json function
-def unique(data):
-    """
-    Removes duplicates from main file
-    """
-    unique_data = []
-    identifiers = set()
-
-    for item in data:
-        hash_digest = md5(str(item).encode('utf-8')).hexdigest()
-
-        if hash_digest not in identifiers:
-            identifiers.add(hash_digest)
-            unique_data.append(item)
-
-    return unique_data
-
-#
-# FUNCTIONS (END)
-###
-
-
-###
 # GROUPS (START)
 #
 
@@ -123,7 +92,22 @@ def task_import():
         'task_dep': [
             'diff',
             'merge',
+            'dedupe',
             'sort',
+        ]
+    }
+
+
+def task_export():
+    """
+    Exports all data from main file to CSV files
+    """
+    return {
+        'actions': None,
+        'task_dep': [
+            'dedupe',
+            'sort',
+            'print',
         ]
     }
 
@@ -140,14 +124,6 @@ def task_diff():
     """
     Processes changes made to CSV files
     """
-    def _diff(file1, file2):
-        diff = compare(
-            load_csv(open(file1), key="Name"),
-            load_csv(open(file2), key="Name"),
-        )
-
-        return diff
-
     def diff():
         for comparison_file in comparison_files:
             current_file = comparison_file.replace('src/changed', 'dist/csv')
@@ -156,51 +132,8 @@ def task_diff():
             with open(json_file, 'r') as input_file:
                 data = json.load(input_file)
 
-            diff = _diff(current_file, comparison_file)
-            added = diff['added']
-            removed = diff['removed']
-            changed = diff['changed']
-
-
-            # Check if items were added
-            if len(added) > 0:
-                print('Added:')
-
-                for item in added:
-                    print(item['Name'])
-
-                    # Check if dictionary
-                    for k, v in item.items():
-                        if '; ' in v and ': ' in v:
-                            d2 = dict(x.split(': ') for x in v.split('; '))
-                            for k2, v2 in d2.items():
-                                if k2 in ['Schüler', 'Lehrer', 'Klassen']:
-                                    d2[k2] = int(v2)
-
-                            item[k] = d2
-
-                        # Check if list
-                        if ', ' in v:
-                            item[k] = v.split(', ')
-
-                    data.append(item)
-
-
-            # Check if items were removed
-            if len(removed) > 0:
-                print('\nRemoved:')
-
-                for item in removed:
-                    print(item['Name'])
-
-                    # Remove from data
-                    data = [node for node in data if not (node['Name'] == item['Name'])]
-
-
-            # Check if items were changed
-            if len(changed) > 0:
-                print('\nChanged:')
-                print(json.dumps(changed, ensure_ascii=False, indent=4))
+            diff = compare_csv(current_file, comparison_file)
+            node = apply_changes(data, diff)
 
             # Write to disk
             with open(json_file, 'w') as output_file:
@@ -256,44 +189,11 @@ def task_restore():
     }
 
 
-def task_extract():
-    """
-    Extracts addresses from source files
-    """
-    def extract_data():
-        with open(base_file, 'r') as file:
-            raw = json.load(file)
-
-        # Process
-        data = []
-
-        for item in raw:
-            node = process(item)
-            data.append(node)
-
-        with open(main_file, 'w') as file:
-            json.dump(unique(data), file, ensure_ascii=False, indent=4)
-
-    return {
-        'task_dep': ['backup'],
-        'file_dep': [
-            customers_file,
-            invoices_file,
-        ],
-        'actions': [
-            'bash src/main.bash',
-            extract_data,
-        ],
-        'targets': [main_file],
-        'uptodate': [run_once],
-    }
-
-
 def task_merge():
     """
     Merges lists into main file
     """
-    def merge_json():
+    def merge():
         data = []
 
         for list_file in list_files:
@@ -301,11 +201,11 @@ def task_merge():
                 data += json.load(file)
 
         with open(main_file, 'w') as file:
-            json.dump(unique(data), file, ensure_ascii=False, indent=4)
+            json.dump(data, file, ensure_ascii=False, indent=4)
 
     return {
         'task_dep': ['backup'],
-        'actions': [merge_json],
+        'actions': [merge],
     }
 
 
@@ -314,46 +214,35 @@ def task_sort():
     """
     Sorts main file
     """
-    def sort(data):
-        data = sorted(
-            data,
-            key=itemgetter(
-                'PLZ',
-                'Straße',
-                'Ort'
-            )
-        )
-
-        return data
-
-    def sort_data():
+    def sort():
         with open(main_file, 'r') as input_file:
             data = json.load(input_file)
 
         with open(main_file, 'w') as output_file:
-            json.dump(sort(data), output_file, ensure_ascii=False, indent=4)
+            json.dump(sort_data(data), output_file, ensure_ascii=False, indent=4)
 
     return {
         'task_dep': ['backup'],
-        'actions': [sort_data],
-        'verbosity': 2,
+        'actions': [sort],
     }
 
 
-def task_filter():
+def task_dedupe():
     """
-    Filters uniques out of main file
+    Removes duplicates from main file
     """
-    def filter_uniques():
+    def dedupe():
         with open(main_file, 'r') as input_file:
             data = json.load(input_file)
 
+        unqiue_data = remove_duplicates(data)
+
         with open(main_file, 'w') as output_file:
-            json.dump(unique(data), output_file, ensure_ascii=False, indent=4)
+            json.dump(unqiue_data, output_file, ensure_ascii=False, indent=4)
 
     return {
         'task_dep': ['backup'],
-        'actions': [filter_uniques],
+        'actions': [dedupe],
     }
 
 
@@ -361,7 +250,7 @@ def task_split():
     """
     Splits main file into lists
     """
-    def split_json():
+    def split_data():
         with open(main_file, 'r') as file:
             raw = json.load(file)
 
@@ -380,11 +269,10 @@ def task_split():
             data.append(item)
 
             with open(file_name, 'w') as file:
-                json.dump(unique(data), file, ensure_ascii=False, indent=4)
+                json.dump(data, file, ensure_ascii=False, indent=4)
 
     return {
-        'actions': ['rm -f ' + lists, split_json],
-        'targets': list_files,
+        'actions': ['rm -f ' + lists, split_data],
     }
 
 
@@ -392,29 +280,6 @@ def task_print():
     """
     Prints CSV tables from main file
     """
-    def _print(data, file):
-        csv_file = csv.writer(
-            file,
-            quoting=csv.QUOTE_NONNUMERIC
-        )
-
-        csv_file.writerow(data[0].keys())
-
-        for item in data:
-            for k, v in item.items():
-                if type(v) == list:
-                    item[k] = ', '.join(v)
-
-                if type(v) == dict:
-                    array = []
-
-                    for k2, v2 in v.items():
-                        array.append(': '.join([k2, str(v2)]))
-
-                    item[k] = '; '.join(array)
-
-            csv_file.writerow(item.values())
-
     def print_tables():
         # Load
         for list_file in list_files:
@@ -423,10 +288,10 @@ def task_print():
 
             # Run
             with open(list_file.replace('json', 'csv'), 'w') as output_file:
-                _print(data, output_file)
+                print_row(data, output_file)
 
     return {
-        'file_dep': list_files,
+        'task_dep': ['split'],
         'actions': ['rm  -f ' + tables, print_tables],
     }
 

@@ -1,202 +1,123 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re  # split, sub
+import csv  # ??
 
 from hashlib import md5
 from operator import itemgetter
 
-
-def clean(string, is_phone=False):
-    # Remove newline control character
-    remove_newline = ' '.join(re.split('\n', string))
-
-    if is_phone is True:
-        replace_area_code = remove_newline.replace('++49', '').replace('+49', '')
-        remove_non_digits = re.sub('\D', '', replace_area_code)
-
-        return remove_non_digits
-
-    # Remove multiple whitespaces within string
-    clean = ' '.join(remove_newline.split())
-
-    return clean.replace('\"', '\'').strip()
+from csv_diff import load_csv, compare
 
 
-def process(item):
-    node = {}
+def sort_data(data):
+    data = sorted(
+        data,
+        key=itemgetter(
+            'PLZ',
+            'Straße',
+            'Ort'
+        )
+    )
 
-    node['Kategorie'] = ''
-    node['Anrede'] = ''
-    node['Vorname'] = ''
-    node['Nachname'] = ''
-    node['Institution'] = ''
-    node['Namenszusatz-1'] = ''
-    node['Namenszusatz-2'] = ''
-    node['Straße'] = ''
-    node['PLZ'] = ''
-    node['Ort'] = ''
-    node['Telefon-1'] = ''
-    node['Telefon-2'] = ''
-    node['Fax'] = ''
-    node['Email'] = ''
-    node['Webseite'] = ''
-    node['Notiz'] = ''
-
-    # Source: data
-    if 'title' in item:
-        node['Institution'] = clean(item['title'])
-
-    if 'street' in item:
-        node['Straße'] = clean(item['street'])
-
-    if 'postal' in item:
-        node['PLZ'] = clean(item['postal'])
-
-    if 'city' in item:
-        node['Ort'] = clean(item['city'])
-
-    if 'phone' in item:
-        node['Telefon-1'] = clean(item['phone'], True)
-
-    if 'fax' in item:
-        node['Fax'] = clean(item['fax'], True)
-
-    if 'mail' in item:
-        node['Email'] = clean(item['mail']).lower()
-
-    if 'web' in item:
-        node['Webseite'] = clean(item['web']).lower().replace('://www.', '://')
+    return data
 
 
-    # Source: offline
-    if 'Kategorie' in item:
-        node['Kategorie'] = clean(item['Kategorie'])
+def remove_duplicates(data):
+    unique_data = []
+    identifiers = set()
 
-    if 'Anrede' in item:
-        value = item['Anrede']
-        node['Anrede'] = clean(value)
+    for item in data:
+        hash_digest = md5(str(item).encode('utf-8')).hexdigest()
 
-    if 'Titel' in item:
-        value = ' '.join([item['Anrede'], item['Titel']])
-        node['Anrede'] = clean(value)
+        if hash_digest not in identifiers:
+            identifiers.add(hash_digest)
+            unique_data.append(item)
 
-    if 'Dr.-Titel' in item:
-        value = ' '.join([item['Anrede'], item['Dr.-Titel']])
-        node['Anrede'] = clean(value)
-
-    if 'Titel' in item and 'Dr.-Titel' in item:
-        value = ' '.join([item['Anrede'], item['Titel'], item['Dr.-Titel']])
-        node['Anrede'] = clean(value)
-
-    if 'Vorname' in item:
-        node['Vorname'] = clean(item['Vorname'])
-
-    if 'Nachname' in item:
-        node['Nachname'] = clean(item['Nachname'])
-
-    if 'Institution' in item:
-        node['Institution'] = clean(item['Institution'])
-
-    if 'Namenszusatz-1' in item:
-        node['Namenszusatz-1'] = clean(item['Namenszusatz-1'])
-
-    if 'Namenszusatz-2' in item:
-        node['Namenszusatz-2'] = clean(item['Namenszusatz-2'])
-
-    if 'Straße' in item:
-        node['Straße'] = clean(item['Straße'])
-
-    if 'PLZ' in item:
-        node['PLZ'] = clean(item['PLZ'])
-
-    if 'Ort' in item:
-        node['Ort'] = clean(item['Ort'])
-
-    if 'Telefon-1' in item:
-        node['Telefon-1'] = clean(item['Telefon-1'], True)
-
-    if 'Telefon-2' in item:
-        node['Telefon-2'] = clean(item['Telefon-2'], True)
-
-    if 'Fax' in item:
-        node['Fax'] = clean(item['Fax'], True)
-
-    if 'Email' in item:
-        node['Email'] = clean(item['Email']).lower()
-
-    if 'Webseite' in item:
-        node['Webseite'] = clean(item['Webseite']).lower().replace('://www.', '://')
-
-    if 'Notiz' in item:
-        node['Notiz'] = clean(item['Notiz'])
+    return unique_data
 
 
-    # No category present
-    if node['Kategorie'] == '':
-        # Pre-school
-        pre_school = [
-            'kinder',
-            'krippe',
-            'krabbel',
-            'kiga',
-            'kita',
-            'hort',
-            'spiel',
-            'wald',
-        ]
+def compare_csv(file1, file2):
+    diff = compare(
+        load_csv(open(file1), key="Name"),
+        load_csv(open(file2), key="Name"),
+    )
 
-        for term in pre_school:
-            if term in node['Vorname'].lower() or term in node['Nachname'].lower() or term in node['Institution'].lower() or term in node['Namenszusatz-1'].lower() or term in node['Namenszusatz-2'].lower():
-                node['Kategorie'] = 'Kindertagesstätte'
+    return diff
 
-        # Libraries
-        libraries = [
-            'bibliothek',
-            'bbliothek',
-            'bücherei',
-            'library',
-        ]
+def apply_changes(data, diff):
+    added = diff['added']
+    removed = diff['removed']
+    changed = diff['changed']
 
-        for term in libraries:
-            if term in node['Vorname'].lower() or term in node['Nachname'].lower() or term in node['Institution'].lower() or term in node['Namenszusatz-1'].lower() or term in node['Namenszusatz-2'].lower():
-                node['Kategorie'] = 'Bücherei / Bibliothek'
 
-        # Culture
-        culture = [
-            'museen',
-            'museum',
-            'theater',
-            'literaturhaus',
-        ]
+    # Check if items were added
+    if len(added) > 0:
+        print('Added:')
 
-        for term in culture:
-            if term in node['Vorname'].lower() or term in node['Nachname'].lower() or term in node['Institution'].lower() or term in node['Namenszusatz-1'].lower() or term in node['Namenszusatz-2'].lower():
-                node['Kategorie'] = 'Kunst / Kultur'
+        for item in added:
+            print(item['Name'])
 
-        # Schools
-        schools = {
-            'grundschule': 'Grundschule',
-            'grund- und hauptschule': 'Grund- und Hauptschule',
-            'hauptschule': 'Hauptschule',
-            'realschule': 'Real- / Gesamtschule',
-            'gesamtschule': 'Real- / Gesamtschule',
-            'gymnasium': 'Gymnasium',
-        }
+            # Check if dictionary
+            for k, v in item.items():
+                if '; ' in v and ': ' in v:
+                    d2 = dict(x.split(': ') for x in v.split('; '))
+                    for k2, v2 in d2.items():
+                        if k2 in ['Schüler', 'Lehrer', 'Klassen']:
+                            d2[k2] = int(v2)
 
-        for term, category in schools.items():
-            if term in node['Vorname'].lower() or term in node['Nachname'].lower() or term in node['Institution'].lower() or term in node['Namenszusatz-1'].lower() or term in node['Namenszusatz-2'].lower():
-                node['Kategorie'] = category
+                    item[k] = d2
 
-    # Category present, but wrong one
-    wrong_categories = {
-        'Kindergarten': 'Kindertagesstätte',
-        'Bibliothek': 'Bücherei / Bibliothek',
-        'Realschule': 'Real- / Gesamtschule',
-    }
+                # Check if list
+                if ', ' in v:
+                    item[k] = v.split(', ')
 
-    if node['Kategorie'] == '':
-        node['Kategorie'] = 'Unsortiert'
+            data.append(item)
 
-    # Done!
-    return node
+
+    # Check if items were removed
+    if len(removed) > 0:
+        print('\nRemoved:')
+
+        for item in removed:
+            print(item['Name'])
+
+            # Remove from data
+            data = [node for node in data if not (node['Name'] == item['Name'])]
+
+
+    # Check if items were changed
+    if len(changed) > 0:
+        print('\nChanged:')
+        print(json.dumps(changed, ensure_ascii=False, indent=4))
+
+    return data
+
+
+def prepare_item(item):
+    for k, v in item.items():
+        if type(v) == list:
+            item[k] = ', '.join(v)
+
+        if type(v) == dict:
+            array = []
+
+            for k2, v2 in v.items():
+                array.append(': '.join([k2, str(v2)]))
+
+            item[k] = '; '.join(array)
+
+        return item
+
+
+def print_row(data, file):
+    csv_file = csv.writer(
+        file,
+        quoting=csv.QUOTE_NONNUMERIC
+    )
+
+    csv_file.writerow(data[0].keys())
+
+    for item in data:
+        node = prepare_item(item)
+
+        csv_file.writerow(node.values())
