@@ -68,7 +68,7 @@ Currently, the initial database was created *before* the decision to release thi
 - [ ] Additional comments
 - [x] Data extraction for `pcbis.de`
 - [x] Tutorial on downloading invoices from `pcbis.de`
-- [ ] Diffing CSV files from employees, adding changes automagically
+- [x] Diffing CSV files from employees, adding changes automagically
 - [ ] More modular setup (rules about converting phone numbers, cities, wrong categories ..)
 
 :copyright: Fundevogel Kinder- und Jugendbuchhandlung

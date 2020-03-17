@@ -9,15 +9,16 @@ from doit import get_var
 from doit.tools import run_once
 
 # TODO: Import only what is needed
-import os  # path > isfile, getctime, split
 import csv  # ??
 import glob  # glob
 import json  # dump, load
 
-from os import path
+from os import path  # > isfile, getctime
 from datetime import datetime  # now
 from hashlib import md5
 from operator import itemgetter
+
+from csv_diff import load_csv, compare
 
 from helpers import process
 
@@ -32,7 +33,6 @@ from helpers import process
 
 DOIT_CONFIG = {
     'action_string_formatting': 'old',
-    'verbosity': 2,
 }
 
 #
@@ -72,9 +72,12 @@ invoices_file = invoices_dir + 'Fakturierung.html'
 backups = backup_dir + '*.json'
 lists = list_dir + '*.json'
 tables = tables_dir + '*.csv'
+comparisons = src + 'changed/*.csv'
 
 backup_files = glob.glob(backups)
 list_files = glob.glob(lists)
+
+comparison_files = glob.glob(comparisons)
 
 #
 # VARIABLES (END)
@@ -85,6 +88,7 @@ list_files = glob.glob(lists)
 # FUNCTIONS (START)
 #
 
+# TODO: Remove unqiue from JSON dumps or move to write_json function
 def unique(data):
     """
     Removes duplicates from main file
@@ -107,8 +111,109 @@ def unique(data):
 
 
 ###
+# GROUPS (START)
+#
+
+def task_import():
+    """
+    Imports changes to CSV files into main file
+    """
+    return {
+        'actions': None,
+        'task_dep': [
+            'diff',
+            'merge',
+            'sort',
+        ]
+    }
+
+#
+# GROUPS (END)
+###
+
+
+###
 # TASKS (START)
 #
+
+def task_diff():
+    """
+    Processes changes made to CSV files
+    """
+    def _diff(file1, file2):
+        diff = compare(
+            load_csv(open(file1), key="Name"),
+            load_csv(open(file2), key="Name"),
+        )
+
+        return diff
+
+    def diff():
+        for comparison_file in comparison_files:
+            current_file = comparison_file.replace('src/changed', 'dist/csv')
+            json_file = current_file.replace('csv', 'json')
+
+            with open(json_file, 'r') as input_file:
+                data = json.load(input_file)
+
+            diff = _diff(current_file, comparison_file)
+            added = diff['added']
+            removed = diff['removed']
+            changed = diff['changed']
+
+
+            # Check if items were added
+            if len(added) > 0:
+                print('Added:')
+
+                for item in added:
+                    print(item['Name'])
+
+                    # Check if dictionary
+                    for k, v in item.items():
+                        if '; ' in v and ': ' in v:
+                            d2 = dict(x.split(': ') for x in v.split('; '))
+                            for k2, v2 in d2.items():
+                                if k2 in ['Schüler', 'Lehrer', 'Klassen']:
+                                    d2[k2] = int(v2)
+
+                            item[k] = d2
+
+                        # Check if list
+                        if ', ' in v:
+                            item[k] = v.split(', ')
+
+                    data.append(item)
+
+
+            # Check if items were removed
+            if len(removed) > 0:
+                print('\nRemoved:')
+
+                for item in removed:
+                    print(item['Name'])
+
+                    # Remove from data
+                    data = [node for node in data if not (node['Name'] == item['Name'])]
+
+
+            # Check if items were changed
+            if len(changed) > 0:
+                print('\nChanged:')
+                print(json.dumps(changed, ensure_ascii=False, indent=4))
+
+            # Write to disk
+            with open(json_file, 'w') as output_file:
+                json.dump(data, output_file, ensure_ascii=False, indent=4)
+
+    return {
+        'actions': [
+            diff,
+            'rm ' + comparisons
+        ],
+        'verbosity': 2,
+    }
+
 
 def task_count():
     """
@@ -122,6 +227,7 @@ def task_count():
 
     return {
         'actions': [count],
+        'verbosity': 2,
     }
 
 
@@ -203,9 +309,10 @@ def task_merge():
     }
 
 
+# TODO: Sort by given key(s)
 def task_sort():
     """
-    Sorts main file  # TODO: by given key(s)
+    Sorts main file
     """
     def sort(data):
         data = sorted(
@@ -214,7 +321,8 @@ def task_sort():
                 'PLZ',
                 'Straße',
                 'Ort'
-        ))
+            )
+        )
 
         return data
 
@@ -228,6 +336,7 @@ def task_sort():
     return {
         'task_dep': ['backup'],
         'actions': [sort_data],
+        'verbosity': 2,
     }
 
 
@@ -283,7 +392,7 @@ def task_print():
     """
     Prints CSV tables from main file
     """
-    def print(data, file):
+    def _print(data, file):
         csv_file = csv.writer(
             file,
             quoting=csv.QUOTE_NONNUMERIC
@@ -313,8 +422,8 @@ def task_print():
                 data = json.load(input_file)
 
             # Run
-            with open(tables_dir + path.split(list_file)[1].replace('json', 'csv'), 'w') as output_file:
-                print(data, output_file)
+            with open(list_file.replace('json', 'csv'), 'w') as output_file:
+                _print(data, output_file)
 
     return {
         'file_dep': list_files,

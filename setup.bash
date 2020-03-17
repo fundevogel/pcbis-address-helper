@@ -9,7 +9,8 @@ source .env/bin/activate
 pip install -r requirements.txt
 
 # Creating directory structure
-for dir in dist/csv \
+for dir in src/changed \
+           dist/csv \
            dist/json \
            backups
 do
