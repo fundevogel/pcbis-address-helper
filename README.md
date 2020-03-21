@@ -30,7 +30,12 @@ With `doit list` you'll be presented with available tasks:
 ```text
 $ doit list
 backup    Backs up main file
+count     Counts entries in main file
+dedupe    Removes duplicates from main file
+diff      Processes changes made to CSV files
+export    Exports all data from main file to CSV files
 fuzzy     Detects possible duplicates
+import    Imports changes to CSV files into main file
 merge     Merges lists into main file
 print     Prints CSV tables from main file
 restore   Restores main file
