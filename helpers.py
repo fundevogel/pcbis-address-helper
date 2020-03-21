@@ -7,6 +7,7 @@ from hashlib import md5
 from operator import itemgetter
 
 from csv_diff import load_csv, compare
+from fuzzywuzzy import process
 
 
 def sort_data(data):
@@ -108,3 +109,16 @@ def print_row(data, file):
         node = prepare_item(item)
 
         csv_file.writerow(node.values())
+
+
+def fuzzy_search(data, category, accuracy):
+    names = [item[category] for item in data]
+
+    for item in data:
+        results = process.extractBests(item[category], names, score_cutoff=accuracy)
+        duplicates = [result for result in results[1:]]
+
+        if len(duplicates) > 0:
+            print('Possible duplicate(s) for "' + item['Name'] + '":')
+            for duplicate in duplicates:
+                print(duplicate[0] + ' (' + str(duplicate[-1]) + '%)')

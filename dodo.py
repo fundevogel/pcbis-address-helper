@@ -15,7 +15,7 @@ import json  # dump, load
 from os import path  # > isfile, getctime
 from datetime import datetime  # now
 
-from helpers import sort_data, remove_duplicates, compare_csv, apply_changes, print_row
+from helpers import sort_data, remove_duplicates, compare_csv, apply_changes, print_row, fuzzy_search
 
 #
 # IMPORTS (END)
@@ -38,6 +38,15 @@ DOIT_CONFIG = {
 ###
 # VARIABLES (START)
 #
+
+# CLI
+config = {
+    'cat': get_var('cat', 'Name'),
+    'acc': get_var('acc', 90),
+}
+
+category = str(config['cat'])
+accuracy = int(config['acc'])
 
 # Time
 now = datetime.now()
@@ -130,6 +139,22 @@ def task_diff():
 
     return {
         "actions": [diff, "rm " + comparisons],
+        "verbosity": 2,
+    }
+
+
+def task_fuzzy():
+    """
+    Detects possible duplicates
+    """
+    def fuzzy():
+        with open(main_file, "r") as file:
+            data = json.load(file)
+
+        fuzzy_search(data, category, accuracy)
+
+    return {
+        "actions": [fuzzy],
         "verbosity": 2,
     }
 

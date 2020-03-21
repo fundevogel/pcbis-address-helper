@@ -30,8 +30,7 @@ With `doit list` you'll be presented with available tasks:
 ```text
 $ doit list
 backup    Backs up main file
-extract   Extracts addresses from source files
-filter    Filters uniques out of main file
+fuzzy     Detects possible duplicates
 merge     Merges lists into main file
 print     Prints CSV tables from main file
 restore   Restores main file
@@ -69,6 +68,7 @@ Currently, the initial database was created *before* the decision to release thi
 - [x] Data extraction for `pcbis.de`
 - [x] Tutorial on downloading invoices from `pcbis.de`
 - [x] Diffing CSV files from employees, adding changes automagically
+- [x] Finding possible duplicates through fuzzysearch
 - [ ] More modular setup (rules about converting phone numbers, cities, wrong categories ..)
 
 :copyright: Fundevogel Kinder- und Jugendbuchhandlung
