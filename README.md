@@ -43,7 +43,7 @@ sort      Sorts main file
 split     Splits main file into lists
 ```
 
-After retrieving `Stammadressen.xls` (customer data), `Fakturierung.hmtl` (invoices) and `Orders_*.csv` (online), put them in their respective directory inside `src` and run `bash src/main.bash` from CLI - after that, it's up to you (pull requests are welcome :fox:).
+After retrieving `Stammadressen.xls` (customer data), `Fakturierung.hmtl` (invoices) and `Orders_<storeID>_*.csv` (online), put them in their respective directory inside `src` and run `bash src/main.bash` from CLI - after that, it's up to you (pull requests are welcome :fox:).
 
 
 ## Troubleshooting
