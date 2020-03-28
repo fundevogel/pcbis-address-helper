@@ -130,7 +130,6 @@ def process(item):
     if 'Notiz' in item:
         node['Notiz'] = clean(item['Notiz'])
 
-
     # No category present
     if node['Kategorie'] == '':
         # Pre-school
@@ -197,6 +196,7 @@ def process(item):
     if node['Kategorie'] == '':
         node['Kategorie'] = 'Unsortiert'
 
+    return node
 
 if __name__ == "__main__":
     # Init

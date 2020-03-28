@@ -9,7 +9,12 @@ for directory in *
 do
     if [ -d "$directory" ]; then
         cd "${directory}" || exit
-        python main.py && cd ..
+
+        if [ -f main.py ]; then
+            python main.py
+        fi
+
+        cd ..
     fi
 done
 
