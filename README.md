@@ -43,11 +43,14 @@ sort      Sorts main file
 split     Splits main file into lists
 ```
 
-After retrieving `Stammadressen.xls` (customer data) and `Fakturierung.hmtl` (invoices), put them in their respective directory inside `src` and run `doit extract` - after that, it's up to you (pull requests are welcome :fox:).
+After retrieving `Stammadressen.xls` (customer data), `Fakturierung.hmtl` (invoices) and `Orders_*.csv` (online), put them in their respective directory inside `src` and run `bash src/main.bash` from CLI - after that, it's up to you (pull requests are welcome :fox:).
 
 
 ## Troubleshooting
 Especially when extracting outdated information, at some point or another challenges will arise:
+
+### Scraping data from KNV's online shop
+Gathering data from [`shopkonfigurator`](https://shopkonfigurator.buchkatalog-reloaded.de) is easy - from the main view of your shop's orders (`meine Shops -> <your shop> -> Aufträge`), click on `Daten-Export` and choose `Auftragsdaten`, enter the relevant period and hit `exportieren`.
 
 ### Scraping invoices
 First of all, exporting those invoices may take some time. When we decided to do this, there were over 8000 records, going back to 2010. `Fitbis` isn't of much help there, limiting us to 50 records per page ..
